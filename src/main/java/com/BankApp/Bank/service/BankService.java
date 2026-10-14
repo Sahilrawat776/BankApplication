@@ -172,10 +172,22 @@ public class BankService {
         Account savedAccount = accountRepository.save(fromAccount);
         accountRepository.save(toAccount);
 
-        return new AccountResponse(
-                savedAccount.getId(),
-                savedAccount.getAccountHolderName(),
-                savedAccount.getBalance()
+        transactionRepository.save(transferOut);
+        transactionRepository.save(transferIn);
+
+        Transfer savedTransfer = transferRepository.save(transfer);
+
+        transactionRepository.save(transferOut);
+        transactionRepository.save(transferIn);
+
+
+        return new TransferResponse(
+                savedTransfer.getId(),
+                savedTransfer.getFromAccount().getId(),
+                savedTransfer.getToAccount().getId(),
+                savedTransfer.getAmount(),
+                savedTransfer.getStatus(),
+                savedTransfer.getTimeStamp()
         );
     }
 
