@@ -139,6 +139,36 @@ public class BankService {
                 toAccount.getBalance() + request.getAmount()
         );
 
+        Transaction transferOut = new Transaction(
+                null,
+                request.getAmount(),
+                "TRANSFER_OUT",
+                LocalDateTime.now(),
+                fromAccount
+        );
+
+        Transaction transferIn = new Transaction(
+                null,
+                request.getAmount(),
+                "TRANSFER_IN",
+                LocalDateTime.now(),
+                toAccount
+        );
+
+        transactionRepository.save(transferOut);
+        transactionRepository.save(transferIn);
+
+        Transfer transfer = new Transfer(null,
+                fromAccount,
+                toAccount,
+                request.getAmount(),
+                "SUCCESS",
+                LocalDateTime.now()
+        );
+
+        transferRepository.save(transfer);
+
+
         Account savedAccount = accountRepository.save(fromAccount);
         accountRepository.save(toAccount);
 
