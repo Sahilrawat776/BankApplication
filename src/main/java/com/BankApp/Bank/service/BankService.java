@@ -117,7 +117,20 @@ public class BankService {
     }
 
     @Transactional
-    public AccountResponse transferMoney(TransferMoneyRequest request) {
+    public TransferResponse transferMoney(TransferMoneyRequest request) {
+
+        Optional<IdempotencyRecord> existingRecord =
+                idempotencyRecordRepository
+                        .findByIdempotencyKey(request.getIdempotencyKey());
+
+        if(existingRecord.isPresent()){
+            IdempotencyRecord record = existingRecord.get();
+            Long transferId = record.getTransferId();
+        }
+
+        if (request.getAmount() <= 0) {
+            throw new IllegalArgumentException("Amount must be positive");
+        }
 
         if(request.getFromAcc().equals(request.getToAcc())){
             throw new SameAccountException("Same account!!");
