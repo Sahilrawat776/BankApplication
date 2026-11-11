@@ -1,6 +1,5 @@
 package com.BankApp.Bank.dto;
 
-import com.BankApp.Bank.model.Account;
 
 import java.time.LocalDateTime;
 

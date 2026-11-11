@@ -10,13 +10,16 @@ public class TransferMoneyRequest {
     @Positive
     private Long toAcc;
 
+    private String idempotencyKey;
+
     public TransferMoneyRequest() {
     }
 
-    public TransferMoneyRequest(double amount, Long fromAcc, Long toAcc) {
+    public TransferMoneyRequest(double amount, Long fromAcc, Long toAcc, String idempotencyKey) {
         this.amount = amount;
         this.fromAcc = fromAcc;
         this.toAcc = toAcc;
+        this.idempotencyKey = idempotencyKey;
     }
 
     public double getAmount() {
@@ -41,5 +44,13 @@ public class TransferMoneyRequest {
 
     public void setToAcc(Long toAcc) {
         this.toAcc = toAcc;
+    }
+
+    public String getIdempotencyKey() {
+        return idempotencyKey;
+    }
+
+    public void setIdempotencyKey(String idempotencyKey) {
+        this.idempotencyKey = idempotencyKey;
     }
 }

@@ -62,9 +62,9 @@ public class BankController {
     }
 
     @PostMapping("/accounts/transfers")
-    public ResponseEntity<AccountResponse> transferMoney(@Valid @RequestBody TransferMoneyRequest request) {
+    public ResponseEntity<TransferResponse> transferMoney(@Valid @RequestBody TransferMoneyRequest request) {
 
-        AccountResponse response = bankService.transferMoney(request);
+        TransferResponse response = bankService.transferMoney(request);
 
         return ResponseEntity.ok(response);
     }

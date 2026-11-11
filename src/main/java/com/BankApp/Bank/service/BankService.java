@@ -4,9 +4,13 @@ import com.BankApp.Bank.dto.*;
 import com.BankApp.Bank.exception.AccountNotFoundException;
 import com.BankApp.Bank.exception.InsufficientBalanceException;
 import com.BankApp.Bank.exception.SameAccountException;
+import com.BankApp.Bank.model.IdempotencyRecord;
 import com.BankApp.Bank.model.Transaction;
+import com.BankApp.Bank.model.Transfer;
 import com.BankApp.Bank.repository.AccountRepository;
+import com.BankApp.Bank.repository.IdempotencyRecordRepository;
 import com.BankApp.Bank.repository.TransactionRepository;
+import com.BankApp.Bank.repository.TransferRepository;
 import org.springframework.stereotype.Service;
 import com.BankApp.Bank.model.Account;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class BankService {
@@ -24,10 +29,23 @@ public class BankService {
 
     private final TransactionRepository transactionRepository;
 
-    public BankService(AccountRepository accountRepository, TransactionRepository transactionRepository) {
+    private final TransferRepository transferRepository;
+
+    private final IdempotencyRecordRepository idempotencyRecordRepository;
+
+    public BankService(
+            AccountRepository accountRepository,
+            TransactionRepository transactionRepository,
+            TransferRepository transferRepository,
+            IdempotencyRecordRepository idempotencyRecordRepository) {
+
         this.accountRepository = accountRepository;
         this.transactionRepository = transactionRepository;
+        this.transferRepository = transferRepository;
+        this.idempotencyRecordRepository = idempotencyRecordRepository;
     }
+
+
 
 
 
@@ -126,6 +144,19 @@ public class BankService {
         if(existingRecord.isPresent()){
             IdempotencyRecord record = existingRecord.get();
             Long transferId = record.getTransferId();
+
+            Transfer existingTransfer = transferRepository.findById(transferId)
+                    .orElseThrow(() ->
+                            new IllegalStateException("Original transfer not found"));
+
+            return new TransferResponse(
+                    existingTransfer.getId(),
+                    existingTransfer.getFromAccount().getId(),
+                    existingTransfer.getToAccount().getId(),
+                    existingTransfer.getAmount(),
+                    existingTransfer.getStatus(),
+                    existingTransfer.getTimeStamp()
+            );
         }
 
         if (request.getAmount() <= 0) {
@@ -168,9 +199,6 @@ public class BankService {
                 toAccount
         );
 
-        transactionRepository.save(transferOut);
-        transactionRepository.save(transferIn);
-
         Transfer transfer = new Transfer(null,
                 fromAccount,
                 toAccount,
@@ -179,20 +207,23 @@ public class BankService {
                 LocalDateTime.now()
         );
 
-        transferRepository.save(transfer);
-
-
         Account savedAccount = accountRepository.save(fromAccount);
         accountRepository.save(toAccount);
 
         transactionRepository.save(transferOut);
         transactionRepository.save(transferIn);
 
+
         Transfer savedTransfer = transferRepository.save(transfer);
 
-        transactionRepository.save(transferOut);
-        transactionRepository.save(transferIn);
+        IdempotencyRecord newRecord = new IdempotencyRecord(
+                null,
+                request.getIdempotencyKey(),
+                savedTransfer.getId(),
+                savedTransfer.getStatus()
+        );
 
+        idempotencyRecordRepository.save(newRecord);
 
         return new TransferResponse(
                 savedTransfer.getId(),
